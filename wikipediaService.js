@@ -1,4 +1,3 @@
-
 // La variable DATABASE_URL se carga automáticamente de .env.local
 
 // wikipediaService.js
