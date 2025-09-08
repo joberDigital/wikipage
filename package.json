@@ -4,11 +4,12 @@
   "description": "Dynamic Content Manager",
   "main": "server.js",
   "scripts": {
-    "test": "mocha --timeout 5000"
+    "test": "node_modules/.bin/mocha --timeout 5000"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.1",
     "axios": "^1.11.0",
+    "dotenv": "^17.2.2",
     "express": "^4.21.2"
   },
   "devDependencies": {
