@@ -4,7 +4,6 @@
   "description": "Dynamic Content Manager",
   "main": "server.js",
 "scripts": {
-  "start": "node server.js",
       "test": "./node_modules/.bin/mocha --timeout 5000"
     },
   "dependencies": {
