@@ -41,4 +41,3 @@ jobs:
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           prod: true
-
