@@ -29,17 +29,15 @@ jobs:
         run: npm test
 
   deploy:
-    needs: build_and_test # This job depends on a successful test run
-    if: github.ref == 'refs/heads/main' # Only deploy from the main branch
+    needs: build_and_test
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
 
       - name: Deploy to Vercel
-        uses: amondnet/vercel-action@v20 # Use the official Vercel GitHub Action
+        uses: amondnet/vercel-action@v20
         with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }} # Reference the secret you created
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }} # Replace with your Vercel Org ID
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }} # Replace with your Vercel Project ID
-          prod: true # Deploys to the production environment
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          prod: true
