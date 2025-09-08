@@ -3,10 +3,10 @@
   "version": "1.0.0",
   "description": "Dynamic Content Manager",
   "main": "server.js",
-  "scripts": {
-    "start": "node server.js",
-    "test": "mocha --timeout 5000"
-  },
+"scripts": {
+  "start": "node server.js",
+      "test": "./node_modules/.bin/mocha --timeout 5000"
+    },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.1",
     "axios": "^1.11.0",
