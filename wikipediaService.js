@@ -178,4 +178,5 @@ class WikipediaService {
 }
 
 // Exportar una instancia del servicio para ser usada en otros módulos
-module.exports = new WikipediaService();
+module.exports = WikipediaService;
+
