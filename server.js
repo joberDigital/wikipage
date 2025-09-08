@@ -1,7 +1,6 @@
-// server.js
 const express = require('express');
 const path = require('path');
-const wikipediaService = require('./wikipediaService'); // Importar el servicio
+const wikipediaService = require('./wikipediaService');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -17,19 +16,22 @@ app.post('/api/pagina/crear', async (req, res) => {
     }
 
     try {
-        // Llama al servicio para obtener el resumen
+        // Llama al servicio para obtener el resumen de Wikipedia
         const data = await wikipediaService.getArticleSummary(pageTitle);
         
-        // Llama al servicio para crear la página HTML
+        // Llama al servicio para crear la página HTML (esta lógica no cambia)
         const cleanPageTitle = pageTitle.replace(/[^a-zA-Z0-9_]/g, '');
         const pageUrl = await wikipediaService.crearPagina(cleanPageTitle, data.title, data.extract);
 
-        // Llama al servicio para guardar los datos en los archivos JSON
-        const articuloData = { title: data.title, summary: data.extract };
-        await wikipediaService.saveArticleData(articuloData, cleanPageTitle, pageUrl);
+        // --- LOS CAMBIOS ESTÁN AQUÍ ---
+        // Ahora se llama a las nuevas funciones del servicio que usan la base de datos
+        await wikipediaService.saveArticle(data.title, data.extract, pageUrl);
+        await wikipediaService.saveLink(data.title, pageUrl, data.extract);
+        await wikipediaService.updateIndex(cleanPageTitle, data.title, pageUrl);
+        // -----------------------------
 
         res.status(200).json({
-            message: 'Página dinámica creada y artículo guardado en todos los archivos.',
+            message: 'Página dinámica creada y artículo guardado en la base de datos.',
             title: data.title,
             summary: data.extract,
             pageUrl: pageUrl
@@ -47,8 +49,10 @@ app.post('/api/pagina/crear', async (req, res) => {
 // Ruta para cargar todos los enlaces guardados
 app.get('/api/enlaces', async (req, res) => {
     try {
-        // Llama al servicio para cargar los enlaces
+        // --- LOS CAMBIOS ESTÁN AQUÍ ---
+        // Ahora se llama a la función del servicio que lee de la base de datos
         const enlaces = await wikipediaService.loadAllLinks();
+        // -----------------------------
         res.json(enlaces);
     } catch (error) {
         console.error('Error en la ruta GET /api/enlaces:', error);
@@ -56,11 +60,13 @@ app.get('/api/enlaces', async (req, res) => {
     }
 });
 
-// Ruta para cargar el artículo guardado en data.json
+// Ruta para cargar el artículo guardado
 app.get('/api/articulo', async (req, res) => {
     try {
-        // Llama al servicio para cargar el último artículo
+        // --- LOS CAMBIOS ESTÁN AQUÍ ---
+        // Ahora se llama a la función del servicio que lee de la base de datos
         const jsonData = await wikipediaService.loadLastArticle();
+        // -----------------------------
         res.json(jsonData);
     } catch (error) {
         if (error.status === 404) {

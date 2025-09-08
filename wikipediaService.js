@@ -1,181 +1,148 @@
+
+// La variable DATABASE_URL se carga automáticamente de .env.local
+
 // wikipediaService.js
-const fs = require('fs').promises;
+const axios = require('axios');
 const path = require('path');
-const fetch = require('node-fetch');
+const fs = require('fs').promises;
+const { neon } = require('@neondatabase/serverless');
 
-// Ubicaciones de archivos (pueden ser inyectadas o definidas aquí)
-const DATA_FILE_PATH = path.join(__dirname, 'data.json');
-const ALOJAMIENTO_FILE = path.join(__dirname, 'alojamiento.json');
-const INDICE_FILE = path.join(__dirname, 'indice.json');
-const PAGES_DIR = path.join(__dirname, 'public', 'paginas');
+// La variable DATABASE_URL se carga automáticamente de .env.local
+const sql = neon(process.env.DATABASE_URL);
 
-// Función auxiliar para eliminar duplicados (se mantiene aquí)
-function eliminarDuplicados(arr, key) {
-    const seen = new Set();
-    return arr.filter(item => {
-        const value = item[key];
-        if (seen.has(value)) {
-            return false;
-        } else {
-            seen.add(value);
-            return true;
+// Función para obtener el resumen de un artículo de Wikipedia
+async function getArticleSummary(pageTitle) {
+    try {
+        const response = await axios.get('https://es.wikipedia.org/api/rest_v1/page/summary/' + encodeURIComponent(pageTitle));
+        if (response.data.type === 'disambiguation') {
+            throw new Error(`La página "${pageTitle}" es una desambiguación. Por favor, sé más específico.`, { status: 404 });
         }
-    });
+        return response.data;
+    } catch (error) {
+        if (error.response && error.response.status === 404) {
+            throw new Error(`La página "${pageTitle}" no fue encontrada en Wikipedia.`, { status: 404 });
+        }
+        console.error('Error al obtener el resumen del artículo:', error);
+        throw new Error('Error de conexión con la API de Wikipedia.');
+    }
 }
 
-/**
- * Servicio para manejar la lógica de la integración con Wikipedia.
- */
-class WikipediaService {
-    /**
-     * Obtiene el resumen de un artículo de Wikipedia.
-     * @param {string} pageTitle - El título del artículo.
-     * @returns {Promise<object>} El resumen del artículo.
-     * @throws {Error} Si el artículo no se encuentra o hay un error en la API.
-     */
-    async getArticleSummary(pageTitle) {
-        const apiUrl = `https://es.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(pageTitle)}`;
-        const response = await fetch(apiUrl);
-        if (!response.ok) {
-            if (response.status === 404) {
-                const error = new Error('No se encontró el artículo en Wikipedia.');
-                error.status = 404; // Agregamos el status al error para manejarlo en la ruta
-                throw error;
-            }
-            throw new Error(`Error en la API de Wikipedia. Status: ${response.status}`);
-        }
-        return response.json();
-    }
+// Función para crear la página HTML (esta lógica no cambia)
+async function crearPagina(fileName, title, summary) {
+    const pageUrl = `/paginas/${fileName}.html`;
+    const filePath = path.join(__dirname, 'public', 'paginas', `${fileName}.html`);
 
-    /**
-     * Crea un archivo HTML estático para el artículo.
-     * @param {string} nombre - El nombre del archivo.
-     * @param {string} titulo - El título del artículo.
-     * @param {string} contenido - El contenido del resumen.
-     * @returns {Promise<string>} La URL de la página creada.
-     */
-    async crearPagina(nombre, titulo, contenido) {
-        const filePath = path.join(PAGES_DIR, `${nombre}.html`);
-        const sanitizedTitulo = titulo.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-        const sanitizedContenido = contenido.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-
-        const html = `
-<!doctype html>
+    const htmlContent = `
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>${sanitizedTitulo}</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f4f4; color: #333; }
-        .container { max-width: 800px; margin: auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); }
-        h1 { color: #333; }
-        a { text-decoration: none; color: #007bff; }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${title}</title>
+    <link rel="stylesheet" href="/estilos.css">
 </head>
 <body>
-    <div class="container">
-        <h1>${sanitizedTitulo}</h1>
-        <p>${sanitizedContenido}</p>
-        <a href="/">⬅️ Volver al inicio</a>
-    </div>
+    <header>
+        <nav>
+            <a href="/" class="button">Inicio</a>
+        </nav>
+    </header>
+    <main class="container">
+        <h1>${title}</h1>
+        <p>${summary}</p>
+    </main>
 </body>
 </html>`;
 
-        await fs.mkdir(PAGES_DIR, { recursive: true });
-        await fs.writeFile(filePath, html, 'utf8');
-        return `/paginas/${nombre}.html`;
-    }
+    await fs.writeFile(filePath, htmlContent, 'utf-8');
+    return pageUrl;
+}
 
-    /**
-     * Guarda el artículo en data.json, alojamiento.json e indice.json.
-     * @param {object} articleData - Los datos del artículo.
-     * @param {string} cleanPageTitle - El título del artículo sanitizado.
-     * @param {string} pageUrl - La URL de la página creada.
-     */
-    async saveArticleData(articleData, cleanPageTitle, pageUrl) {
-        // Lógica para guardar en data.json
-        await fs.writeFile(DATA_FILE_PATH, JSON.stringify(articleData, null, 2), 'utf8');
+// --- Lógica de Base de Datos ---
 
-        // Lógica para guardar en alojamiento.json
-        const newLink = {
-            title: articleData.title,
-            url: `https://es.wikipedia.org/wiki/${articleData.title}`,
-            summary: articleData.summary
-        };
-        const alojamientoData = await fs.readFile(ALOJAMIENTO_FILE, 'utf8').catch(() => '[]');
-        let links = JSON.parse(alojamientoData);
-        if (!Array.isArray(links)) {
-            links = [];
-        }
-        links.push(newLink);
-        const uniqueLinks = eliminarDuplicados(links, 'url');
-        await fs.writeFile(ALOJAMIENTO_FILE, JSON.stringify(uniqueLinks, null, 2), 'utf8');
-
-        // Lógica para actualizar indice.json
-        let indice = {};
-        try {
-            const indiceData = await fs.readFile(INDICE_FILE, 'utf8');
-            indice = JSON.parse(indiceData);
-        } catch (e) {
-            if (e.code === 'ENOENT') {
-                console.log('El archivo indice.json no existe. Creando uno nuevo.');
-            } else {
-                console.error('Error al leer indice.json:', e);
-            }
-        }
-        
-        indice[cleanPageTitle] = {
-            title: articleData.title,
-            url: pageUrl
-        };
-        const indiceArray = Object.keys(indice).map(key => ({ key: key, ...indice[key] }));
-        const uniqueIndiceArray = eliminarDuplicados(indiceArray, 'key');
-        const uniqueIndice = uniqueIndiceArray.reduce((obj, item) => {
-            obj[item.key] = { title: item.title, url: item.url };
-            return obj;
-        }, {});
-        await fs.writeFile(INDICE_FILE, JSON.stringify(uniqueIndice, null, 2), 'utf8');
-    }
-
-    /**
-     * Carga todos los enlaces desde alojamiento.json.
-     * @returns {Promise<Array>} Un array de enlaces.
-     */
-    async loadAllLinks() {
-        try {
-            const data = await fs.readFile(ALOJAMIENTO_FILE, 'utf8');
-            const enlaces = JSON.parse(data);
-            if (!Array.isArray(enlaces)) {
-                return [];
-            }
-            return enlaces;
-        } catch (err) {
-            if (err.code === 'ENOENT') {
-                return [];
-            }
-            throw new Error('Error al cargar los enlaces.');
-        }
-    }
-
-    /**
-     * Carga el último artículo guardado desde data.json.
-     * @returns {Promise<object>} El artículo guardado.
-     * @throws {Error} Si el archivo no existe o tiene un formato incorrecto.
-     */
-    async loadLastArticle() {
-        try {
-            const data = await fs.readFile(DATA_FILE_PATH, 'utf8');
-            return JSON.parse(data);
-        } catch (err) {
-            if (err.code === 'ENOENT') {
-                const error = new Error('El archivo de datos no existe.');
-                error.status = 404;
-                throw error;
-            }
-            throw new Error('Formato de archivo JSON incorrecto');
-        }
+// Función para guardar el artículo en la base de datos
+async function saveArticle(title, summary, pageUrl) {
+    try {
+        await sql`
+            INSERT INTO articles (title, summary, page_url)
+            VALUES (${title}, ${summary}, ${pageUrl})
+            ON CONFLICT (title) DO UPDATE SET
+            summary = EXCLUDED.summary,
+            page_url = EXCLUDED.page_url;
+        `;
+        console.log('Artículo guardado/actualizado en la base de datos.');
+    } catch (error) {
+        console.error('Error al guardar el artículo en la base de datos:', error);
+        throw error;
     }
 }
 
-// Exportar una instancia del servicio para ser usada en otros módulos
-module.exports = new WikipediaService();
+// Función para guardar el enlace en la base de datos
+async function saveLink(title, url, summary) {
+    try {
+        await sql`
+            INSERT INTO links (title, url, summary)
+            VALUES (${title}, ${url}, ${summary})
+            ON CONFLICT (url) DO NOTHING;
+        `;
+        console.log('Enlace guardado en la base de datos.');
+    } catch (error) {
+        console.error('Error al guardar el enlace en la base de datos:', error);
+        throw error;
+    }
+}
+
+// Función para actualizar el índice en la base de datos
+async function updateIndex(key, title, url) {
+    try {
+        await sql`
+            INSERT INTO indices (key, title, url)
+            VALUES (${key}, ${title}, ${url})
+            ON CONFLICT (key) DO UPDATE SET
+            title = EXCLUDED.title,
+            url = EXCLUDED.url;
+        `;
+        console.log('Índice actualizado en la base de datos.');
+    } catch (error) {
+        console.error('Error al actualizar el índice:', error);
+        throw error;
+    }
+}
+
+// Función para obtener todos los enlaces de la base de datos
+async function loadAllLinks() {
+    try {
+        const links = await sql`SELECT title, url, summary FROM links;`;
+        console.log('Enlaces cargados de la base de datos.');
+        return links;
+    } catch (error) {
+        console.error('Error al cargar los enlaces de la base de datos:', error);
+        return [];
+    }
+}
+
+// Función para obtener el último artículo de la base de datos
+async function loadLastArticle() {
+    try {
+        const result = await sql`
+            SELECT title, summary FROM articles
+            ORDER BY created_at DESC
+            LIMIT 1;
+        `;
+        console.log('Último artículo cargado de la base de datos.');
+        return result.length > 0 ? result[0] : null;
+    } catch (error) {
+        console.error('Error al cargar el artículo de la base de datos:', error);
+        return null;
+    }
+}
+
+module.exports = {
+    getArticleSummary,
+    crearPagina,
+    saveArticle,
+    saveLink,
+    updateIndex,
+    loadAllLinks,
+    loadLastArticle
+};
