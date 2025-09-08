@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestor de Contenido Dinámico</title> 
+  <style>
+  body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+    background-color: #f4f4f4;
+    color: #333;
+}
+.container {
+    max-width: 800px;
+    margin: auto;
+    background: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+h1, h2 {
+    color: #333;
+}
+button {
+    padding: 10px 15px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+}
+#save-button, #load-links-button {
+    background-color: #007bff;
+    color: white;
+}
+#load-links-button {
+    background-color: #28a745;
+}
+ul {
+    list-style-type: none;
+    padding: 0;
+}
+li {
+    background: #e9ecef;
+    padding: 10px;
+    margin-bottom: 8px;
+    border-radius: 4px;
+}
+.status-message {
+    margin-top: 10px;
+    font-style: italic;
+    color: #666;
+}
+#wikipedia-link-input {
+    width: 100%;
+    padding: 8px;
+    margin-bottom: 10px;
+    box-sizing: border-box;
+}
+.accordion-header {
+    background-color: #007bff;
+    color: white;
+    padding: 18px;
+    width: 100%;
+    border: none;
+    text-align: left;
+    outline: none;
+    font-size: 18px;
+    transition: background-color 0.3s ease;
+    cursor: pointer;
+    margin-top: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.accordion-header:hover {
+    background-color: #0056b3;
+}
+.accordion-content {
+    padding: 0 18px;
+    background-color: white;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-out;
+    display: none;
+}
+</style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Gestor de Contenido Dinámico</h1>
+        
+        <h2>1. Guardar Enlace de Wikipedia</h2>
+        <p>Introduce el título de un artículo de Wikipedia (ej: `Inteligencia_artificial`) y haz clic en el botón para guardar y mostrar el resumen.</p>
+        <input type="text" id="wikipedia-link-input" placeholder="Ejemplo: Inteligencia_artificial">
+        <button id="save-button">Guardar Enlace</button>
+        <p class="status-message" id="message"></p>
+
+        <hr>
+        
+        <h2>2. Artículo Guardado Anteriormente</h2>
+        <p>Esta sección muestra el último artículo guardado en un menú desplegable.</p>
+        
+        <div id="accordion-header" class="accordion-header">
+            <span>Haz clic para ver el artículo...</span>
+        </div>
+        <div id="accordion-content" class="accordion-content">
+            <p></p>
+        </div>
+
+        <hr>
+
+        <h2>3. Cargar Lista de Enlaces</h2>
+        <p>Haz clic en el botón para obtener y mostrar todos los enlaces guardados en el archivo.</p>
+        <button id="load-links-button">Cargar Enlaces</button>
+        <p class="status-message" id="links-status"></p>
+        <ul id="links-list">
+            </ul>
+        
+    </div>
+    <script src="script.js" type="module"></script>
+    <script src="cliente.js"></script>
+</body>
+</html>

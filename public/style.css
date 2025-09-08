@@ -1,0 +1,25 @@
+* { box-sizing: border-box; }
+body {
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  margin: 0; padding: 0; background: #0f172a; color: #e2e8f0;
+}
+.container { max-width: 720px; margin: 40px auto; padding: 0 16px; }
+h1 { margin-bottom: 24px; }
+.card {
+  background: #111827; border: 1px solid #1f2937;
+  border-radius: 16px; padding: 16px 16px 10px; margin-bottom: 20px;
+  box-shadow: 0 10px 30px rgba(0,0,0,.25);
+}
+.row { display: flex; gap: 8px; margin-bottom: 8px; }
+input, button {
+  padding: 10px 12px; border-radius: 10px; border: 1px solid #374151;
+  background: #0b1220; color: #e5e7eb;
+}
+button { cursor: pointer; }
+#listaItems { list-style: none; padding: 0; margin-top: 12px; }
+#listaItems li {
+  display: flex; justify-content: space-between; align-items: center;
+  gap: 8px; padding: 10px 12px; border: 1px solid #1f2937; border-radius: 10px;
+  margin-bottom: 8px; background: #0b1220;
+}
+#listaItems li button { border-color: #7f1d1d; }
