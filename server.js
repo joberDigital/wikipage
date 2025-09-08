@@ -65,7 +65,7 @@ app.get('/api/articulo', async (req, res) => {
         res.status(500).json({ error: 'No se pudo cargar el artículo.' });
     }
 });
-
+ssssssssssssss
 app.listen(PORT, () => {
     console.log(`Servidor escuchando en http://localhost:${PORT}`);
 });
