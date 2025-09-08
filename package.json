@@ -4,7 +4,7 @@
   "description": "Dynamic Content Manager",
   "main": "server.js",
   "scripts": {
-    "test": "node_modules/.bin/mocha --timeout 5000"
+    "test": "./node_modules/.bin/mocha --timeout 5000"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.1",
