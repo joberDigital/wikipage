@@ -1,6 +1,8 @@
+// server.js
 require('dotenv').config({ path: '.env.local' });
 const express = require('express');
 const path = require('path');
+// Importa el nuevo módulo de servicio
 const wikipediaService = require('./wikipediaService');
 
 const app = express();
@@ -9,7 +11,7 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Ruta POST para crear la página dinámica y guardar los datos
+// Ruta POST para crear la página dinámica
 app.post('/api/pagina/crear', async (req, res) => {
     const { pageTitle } = req.body;
     if (!pageTitle) {
@@ -19,9 +21,11 @@ app.post('/api/pagina/crear', async (req, res) => {
     try {
         const data = await wikipediaService.getArticleSummary(pageTitle);
         
+        // La creación de la página HTML (todavía en el disco)
         const cleanPageTitle = pageTitle.replace(/[^a-zA-Z0-9_]/g, '');
         const pageUrl = await wikipediaService.crearPagina(cleanPageTitle, data.title, data.extract);
 
+        // Llama a las funciones del servicio para la base de datos
         await wikipediaService.saveArticle(data.title, data.extract, pageUrl);
         await wikipediaService.saveLink(data.title, pageUrl, data.extract);
         await wikipediaService.updateIndex(cleanPageTitle, data.title, pageUrl);
@@ -42,7 +46,7 @@ app.post('/api/pagina/crear', async (req, res) => {
     }
 });
 
-// Ruta para cargar todos los enlaces guardados
+// Ruta para cargar todos los enlaces
 app.get('/api/enlaces', async (req, res) => {
     try {
         const enlaces = await wikipediaService.loadAllLinks();
@@ -53,7 +57,7 @@ app.get('/api/enlaces', async (req, res) => {
     }
 });
 
-// Ruta para cargar el artículo guardado
+// Ruta para cargar el último artículo
 app.get('/api/articulo', async (req, res) => {
     try {
         const jsonData = await wikipediaService.loadLastArticle();
@@ -66,6 +70,7 @@ app.get('/api/articulo', async (req, res) => {
         res.status(500).json({ error: 'No se pudo cargar el artículo.' });
     }
 });
+
 app.listen(PORT, () => {
     console.log(`Servidor escuchando en http://localhost:${PORT}`);
 });

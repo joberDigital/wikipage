@@ -5,13 +5,35 @@ name: CI/CD Pipeline
 on:
   push:
     branches:
-      - main # Deploys automatically on pushes to the main branch
+      - main # This workflow runs on pushes to the main branch
   pull_request:
     branches:
-      - main # Runs tests on pull requests
+      - main # This workflow runs on pull requests to the main branch
 
 jobs:
   build_and_test:
+    runs-on: ubuntu-latest # The type of machine to run the job on
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2 # Action to check out your repository code
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '18' # Specify the Node.js version
+      
+      - name: Install dependencies
+        run: npm install # Installs your project dependencies
+
+      - name: Run tests
+        run: npm test # Runs the test script defined in package.json
+        
+      - name: Build project (optional)
+        run: echo "No build step required for this project"
+        
+  deploy:
+    needs: build_and_test # This job depends on the build_and_test job completing successfully
+    if: github.ref == 'refs/heads/main' # Only deploy on pushes to the main branch
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -21,23 +43,17 @@ jobs:
         uses: actions/setup-node@v2
         with:
           node-version: '18'
-      
+          
       - name: Install dependencies
         run: npm install
-
-      - name: Run tests
-        run: npm test
-
-  deploy:
-    needs: build_and_test
-    if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-
-      - name: Deploy to Vercel
-        uses: amondnet/vercel-action@v20
-        with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          prod: true
+        
+      - name: Deploy to Server (Example)
+        # Here you would add your deployment logic. This could be
+        # - Using an SSH action to connect and run commands on your server
+        # - Pushing to a PaaS like Heroku or Vercel
+        # - Using a cloud provider's CLI (e.g., AWS, Azure)
+        run: |
+          echo "Deploying to production environment..."
+          # Replace with your actual deployment commands
+          # For example: ssh user@your-server.com 'cd /var/www/my-app && git pull && npm install && pm2 restart my-app'
+          echo "Deployment successful!"
