@@ -1,6 +1,6 @@
 // server.js
 
-require('dotenv').config({ path: '.env.local.example' });
+require('dotenv').config({ path: '.env.local' });
 const express = require('express');
 const path = require('path');
 // Importa el nuevo módulo de servicio

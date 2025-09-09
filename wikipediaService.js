@@ -1,5 +1,5 @@
 // wikipediaService.js
-require('dotenv').config({ path: '.env.local.example' });
+require('dotenv').config({ path: '.env.local' });
 const axios = require('axios');
 const path = require('path');
 const fs = require('fs').promises;
