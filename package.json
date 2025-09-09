@@ -2,9 +2,9 @@
   "name": "my-project",
   "version": "1.0.0",
   "main": "server.js",
-"scripts": {
-  "test": "mocha --timeout 5000"
-},
+  "scripts": {
+    "test": "mocha --timeout 5000"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/joberDigital/wikipage.git"
@@ -22,5 +22,10 @@
     "axios": "^1.11.0",
     "dotenv": "^17.2.2",
     "express": "^5.1.0"
+  },
+  "devDependencies": {
+    "chai": "^6.0.1",
+    "mocha": "^11.7.2",
+    "sinon": "^21.0.0"
   }
 }
